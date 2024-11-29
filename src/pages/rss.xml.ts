@@ -1,8 +1,13 @@
 import rss from "@astrojs/rss";
 import { getCollection } from "astro:content";
 import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
+import { type APIRoute } from "astro";
 
-export async function GET(context) {
+export const GET: APIRoute = async (context) => {
+  if (context.site === undefined) {
+    throw new Error("Site context is unavailable");
+  }
+
   const posts = await getCollection("blog");
   return rss({
     title: SITE_TITLE,
@@ -13,4 +18,4 @@ export async function GET(context) {
       link: `/blog/${post.slug}/`,
     })),
   });
-}
+};
