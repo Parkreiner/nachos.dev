@@ -6,14 +6,18 @@ const blogPosts = await getCollection("blog");
 ---
 
 <RootLayout title="Blog" description="See recent blogs">
-  <h1>Here&apos;s my blog!</h1>
-  <ul>
-    {
-      blogPosts.map((p) => (
-        <li>
-          <a href={p.slug}>{p.data.title}</a>
-        </li>
-      ))
-    }
-  </ul>
+  <main>
+    <h1>Here&apos;s my blog!</h1>
+    <ul>
+      {
+        blogPosts.map((p) => (
+          <li>
+            <a href={p.slug}>{p.data.title}</a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <aside>Blah</aside>
+  </main>
 </RootLayout>

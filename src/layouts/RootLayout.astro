@@ -18,7 +18,9 @@ const { title, description } = Astro.props;
 
   <body>
     <NavHeader />
-    <slot />
+    <main class="mx-auto max-w-screen-md px-4">
+      <slot />
+    </main>
     <Footer />
   </body>
 </html>
