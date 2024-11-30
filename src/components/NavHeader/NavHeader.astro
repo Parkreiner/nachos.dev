@@ -1,9 +1,9 @@
 <div class="pb-4 text-white/90">
   <header>
     <nav
-      class="mx-auto flex max-w-screen-md flex-row items-center justify-between px-4 py-8"
+      class="mx-auto flex max-w-screen-md flex-row items-center gap-4 px-4 py-8 font-medium"
     >
-      <a class="w-32" href="/">
+      <a class="w-32 shrink-0" href="/">
         <svg
           id="Layer_1"
           data-name="Layer 1"
@@ -38,17 +38,13 @@
             d="M523.09,128.26c4.31-4.53,9.24-8.15,14.93-10.52,14.02-5.93,26.74-3.73,38.03,5.88,9.65,8.16,15.23,18.76,18.06,31.2,4.54,20.61,2.06,40.21-8.56,58.52-4.44,7.77-10.46,14.26-18.26,18.98-13.05,8.08-29.15,7.2-41.5-2.13-6.61-4.96-12.4-12.49-16.35-21.24-11.54-25.99-5.82-59.98,13.65-80.69Z"
           ></path>
         </svg>
+
+        <span class="sr-only">Return to homepage</span>
       </a>
 
-      <section role="group" class="flex items-center gap-4 font-medium">
-        <a class="hover:underline" href="/portfolio"
-          >Resum&eacute;<span class="p-0.5">/</span>Portfolio</a
-        >
-
-        <a class="hover:underline" href="/blog">Blog</a>
-
+      <div class="-ml-1.5 -mr-2 flex rotate-[-75deg] flex-row gap-2">
         <a
-          class="block h-5 w-5"
+          class="order-2 block h-5 w-5 rotate-[75deg]"
           href="https://github.com/parkreiner/"
           target="_blank"
         >
@@ -62,7 +58,7 @@
         </a>
 
         <a
-          class="block h-5 w-5"
+          class="block h-4 w-4 rotate-[75deg]"
           href="https://linkedin.com/buenos-nachos"
           target="_blank"
         >
@@ -75,7 +71,15 @@
           <span class="sr-only">My LinkedIn page (link opens in a new tab)</span
           >
         </a>
-      </section>
+      </div>
+
+      <a class="hover:underline" href="/portfolio"
+        >Resum&eacute;<span class="p-0.5">/</span>Portfolio</a
+      >
+
+      <a class="hover:underline" href="/blog">Blog</a>
+
+      <div class="h-[1px] grow bg-white"></div>
     </nav>
   </header>
 </div>
