@@ -1,0 +1,18 @@
+---
+import { cn } from "../utils/styling";
+
+type Props = Readonly<{
+  class?: string;
+}>;
+
+const { class: className } = Astro.props;
+---
+
+<div
+  class={cn([
+    "prose max-w-prose prose-h1:text-2xl prose-h1:text-white prose-h2:text-xl prose-h2:text-white prose-p:text-white/90",
+    className,
+  ])}
+>
+  <slot />
+</div>

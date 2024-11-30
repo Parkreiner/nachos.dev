@@ -10,9 +10,11 @@ const blog = defineCollection({
     title: nonEmptyString,
     description: nonEmptyString,
     datePublished: z.coerce.date(),
-    dateUpdated: z.coerce.date().optional(),
     tags: z.array(nonEmptyString).min(1),
+
+    dateUpdated: z.coerce.date().optional(),
     hasAudioNarration: z.boolean().optional(),
+    customLayout: z.boolean().optional(),
   }),
 });
 

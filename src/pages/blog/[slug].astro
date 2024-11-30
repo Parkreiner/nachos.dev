@@ -3,6 +3,7 @@ import { getCollection } from "astro:content";
 import RootLayout from "../../layouts/RootLayout.astro";
 import type { GetStaticPaths } from "astro";
 import type { CollectionEntry } from "astro:content";
+import MarkdownLayout from "../../layouts/MarkdownLayout.astro";
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const blogPosts = await getCollection("blog");
@@ -14,7 +15,9 @@ export const getStaticPaths: GetStaticPaths = async () => {
 
 type Props = CollectionEntry<"blog">;
 
-const { render } = Astro.props;
+const { render, data } = Astro.props;
+const { customLayout = false } = data;
+
 const { Content } = await render();
 ---
 
@@ -22,5 +25,13 @@ const { Content } = await render();
   title="Resumé & Portfolio"
   description="See what I've done in the past"
 >
-  <Content />
+  {
+    customLayout ? (
+      <Content />
+    ) : (
+      <MarkdownLayout>
+        <Content />
+      </MarkdownLayout>
+    )
+  }
 </RootLayout>

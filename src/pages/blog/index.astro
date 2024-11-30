@@ -3,21 +3,24 @@ import { getCollection } from "astro:content";
 import RootLayout from "../../layouts/RootLayout.astro";
 
 const blogPosts = await getCollection("blog");
+blogPosts.sort(
+  (p1, p2) => p1.data.datePublished.valueOf() - p2.data.datePublished.valueOf(),
+);
 ---
 
 <RootLayout title="Blog" description="See recent blogs">
-  <main>
-    <h1>Here&apos;s my blog!</h1>
-    <ul>
+  <div>
+    <h1>Here&apos;s my blog posts!</h1>
+    <ul class="list-disc pl-4">
       {
         blogPosts.map((p) => (
           <li>
-            <a href={p.slug}>{p.data.title}</a>
+            <a class="hover:underline" href={`/blog/${p.slug}`}>
+              {p.data.title}
+            </a>
           </li>
         ))
       }
     </ul>
-
-    <aside>Blah</aside>
-  </main>
+  </div>
 </RootLayout>

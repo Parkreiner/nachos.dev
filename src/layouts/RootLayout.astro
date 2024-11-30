@@ -1,14 +1,17 @@
 ---
 import PageMetadata from "../components/PageMetadata/PageMetadata.astro";
 import NavHeader from "../components/NavHeader/NavHeader.astro";
-import Footer from "../components/Footer/Footer.astro";
+import { cn } from "../utils/styling";
 
 type Props = Readonly<{
-  title: string | null;
+  title: string;
   description: string;
+
+  mainClassName?: string;
+  bodyClassName?: string;
 }>;
 
-const { title, description } = Astro.props;
+const { title, description, mainClassName, bodyClassName } = Astro.props;
 ---
 
 <html lang="en">
@@ -16,11 +19,11 @@ const { title, description } = Astro.props;
     <PageMetadata title={title} description={description} />
   </head>
 
-  <body>
+  <body class={cn(["bg-blue-950 text-white/90", bodyClassName])}>
     <NavHeader />
-    <main class="mx-auto max-w-screen-md px-4">
+
+    <main class={cn(["mx-auto max-w-screen-md px-4", mainClassName])}>
       <slot />
     </main>
-    <Footer />
   </body>
 </html>
