@@ -1,0 +1,24 @@
+---
+import PageMetadata from "../components/PageMetadata/PageMetadata.astro";
+import NavHeader from "../components/NavHeader/NavHeader.astro";
+import Footer from "../components/Footer/Footer.astro";
+
+type Props = Readonly<{
+  title: string | null;
+  description: string;
+}>;
+
+const { title, description } = Astro.props;
+---
+
+<html lang="en">
+  <head>
+    <PageMetadata title={title} description={description} />
+  </head>
+
+  <body>
+    <NavHeader />
+    <slot />
+    <Footer />
+  </body>
+</html>

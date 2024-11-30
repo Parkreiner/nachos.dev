@@ -1,15 +1,18 @@
 import { defineCollection, z } from "astro:content";
 
+const nonEmptyString = z.string().min(1);
+
+// Slugs are not allowed to be part of the schema; make sure that every post I
+// publish has one so that I have something close to permalinks!
 const blog = defineCollection({
   type: "content",
-  // Type-check frontmatter using a schema
   schema: z.object({
-    title: z.string(),
-    description: z.string(),
-    // Transform string to Date object
-    pubDate: z.coerce.date(),
-    updatedDate: z.coerce.date().optional(),
-    heroImage: z.string().optional(),
+    title: nonEmptyString,
+    description: nonEmptyString,
+    datePublished: z.coerce.date(),
+    dateUpdated: z.coerce.date().optional(),
+    tags: z.array(nonEmptyString).min(1),
+    hasAudioNarration: z.boolean().optional(),
   }),
 });
 
