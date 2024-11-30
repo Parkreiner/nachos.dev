@@ -15,4 +15,7 @@ export default {
       },
     },
   ],
+
+  tailwindConfig: "./tailwind.config.mjs",
+  tailwindFunctions: ["cn"],
 };
