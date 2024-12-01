@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  @font-face {
+    font-family: "Nunito";
+    src: url("/fonts/nunito/nunito-variable.ttf") format("woff2");
+    font-style: normal;
+    font-weight: 100 200 300 400 500 600 700 800 900;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Nunito";
+    src: url("/fonts/nunito/nunito-variable-italic.ttf") format("woff2");
+    font-style: italic;
+    font-weight: 100 200 300 400 500 600 700 800 900;
+    font-display: swap;
+  }
+}
