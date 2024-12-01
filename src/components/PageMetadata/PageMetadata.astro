@@ -1,5 +1,6 @@
 ---
 import { SITE_TITLE as titleRoot } from "../../typesConstants";
+import "../../Base.css";
 
 const INTERPUNCT = "\u00B7";
 
@@ -12,9 +13,10 @@ type Props = Readonly<{
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const { title, description, image } = Astro.props;
 
-const fullTitle = Boolean(title)
-  ? `${title} ${INTERPUNCT} ${titleRoot}`
-  : titleRoot;
+const fullTitle =
+  Boolean(title) && title !== titleRoot
+    ? `${title} ${INTERPUNCT} ${titleRoot}`
+    : titleRoot;
 ---
 
 <!-- Global Metadata -->
@@ -26,16 +28,16 @@ const fullTitle = Boolean(title)
 <!-- Font preloads -->
 <link
   rel="preload"
-  href="/fonts/atkinson-regular.woff"
+  href="/fonts/nunito/nunito-variable.ttf"
   as="font"
-  type="font/woff"
+  type="font/woff2"
   crossorigin
 />
 <link
   rel="preload"
-  href="/fonts/atkinson-bold.woff"
+  href="/fonts/nunito/nunito-variable-italic.ttf"
   as="font"
-  type="font/woff"
+  type="font/woff2"
   crossorigin
 />
 
