@@ -16,40 +16,58 @@ type SetLocalStorageCallback<T extends JsonValue = JsonValue> = (
   payload: T | null | ((newValue: T | null) => T | null),
 ) => void;
 
-type UseLocalStorageOptions<TStorageValue extends JsonValue = JsonValue> =
-  Readonly<{
-    key: string;
-    fallbackValue?: TStorageValue;
-    onError?: (error: Error) => void;
+type BaseUseLocalStorageOptions = Readonly<{
+  key: string;
+  onError?: (error: Error) => void;
 
-    /**
-     * A custom localStorage implementation. Mainly relevant for testing.
-     */
-    localStorage?: Storage;
+  /**
+   * A custom localStorage implementation. Mainly relevant for testing.
+   */
+  localStorage?: Storage;
 
-    /**
-     * If a null value would be written to localStorage, instead remove the
-     * key-value pair entirely.
-     */
-    removeNullValues?: boolean;
+  /**
+   * If a null value would be written to localStorage, instead remove the
+   * key-value pair entirely.
+   */
+  removeNullValues?: boolean;
 
-    /**
-     * If fallbackValue is provided, and there is no value in localStorage, sync
-     * the value to localStorage. Never does anything if fallbackValue is not
-     * provided on the first render.
-     */
-    syncFallbackOnMount?: boolean;
-  }>;
+  /**
+   * If fallbackValue is provided, and there is no value in localStorage, sync
+   * the value to localStorage. Never does anything if fallbackValue is not
+   * provided on the first render.
+   */
+  syncFallbackOnMount?: boolean;
+}>;
 
-type UseLocalStorageResult<TStorageValue extends JsonValue = JsonValue> =
-  readonly [
-    value: TStorageValue | null,
-    setStorageValue: SetLocalStorageCallback<TStorageValue>,
-  ];
+type UseLocalStorageOptionsWithoutFallback = Readonly<
+  BaseUseLocalStorageOptions & {
+    fallbackValue?: undefined;
+  }
+>;
 
-export function useLocalStorage<TReturn extends JsonValue = JsonValue>(
-  options: UseLocalStorageOptions<TReturn>,
-): UseLocalStorageResult<TReturn> {
+type UseLocalStorageOptionsWithFallback<T extends JsonValue = JsonValue> =
+  Readonly<
+    BaseUseLocalStorageOptions & {
+      fallbackValue: T;
+    }
+  >;
+
+type UseLocalStorageResult<T extends JsonValue = JsonValue> = readonly [
+  value: T,
+  setStorageValue: SetLocalStorageCallback<T>,
+];
+
+export function useLocalStorage<T extends JsonValue = JsonValue>(
+  options: UseLocalStorageOptionsWithFallback<T>,
+): UseLocalStorageResult<T>;
+export function useLocalStorage<T extends JsonValue = JsonValue>(
+  options: UseLocalStorageOptionsWithoutFallback,
+): UseLocalStorageResult<T | null>;
+export function useLocalStorage<T extends JsonValue = JsonValue>(
+  options:
+    | UseLocalStorageOptionsWithoutFallback
+    | UseLocalStorageOptionsWithFallback<T>,
+): UseLocalStorageResult<T | null> {
   const {
     key,
     fallbackValue,
@@ -103,14 +121,14 @@ export function useLocalStorage<TReturn extends JsonValue = JsonValue>(
     [key, localStorage, stableOnError],
   );
 
-  const readFromLocalStorage = (): TReturn | null => {
+  const readFromLocalStorage = (): T | null => {
     const payload = localStorage.getItem(key);
     if (payload === null) {
       return null;
     }
 
     try {
-      const parsed = JSON.parse(payload) as TReturn;
+      const parsed = JSON.parse(payload) as T;
       return parsed;
     } catch (err) {
       stableOnError(err as Error);
@@ -128,9 +146,9 @@ export function useLocalStorage<TReturn extends JsonValue = JsonValue>(
       ? fallbackValue
       : storageValue;
 
-  const setLocalStorageValue: SetLocalStorageCallback<TReturn> = useEffectEvent(
+  const setLocalStorageValue: SetLocalStorageCallback<T> = useEffectEvent(
     (payload) => {
-      let newValue: TReturn | null;
+      let newValue: T | null;
       if (typeof payload === "function") {
         try {
           newValue = payload(hookValue);
@@ -173,7 +191,10 @@ export function useLocalStorage<TReturn extends JsonValue = JsonValue>(
     localStorage.setItem(key, string);
   }, []);
 
-  return [hookValue, setLocalStorageValue];
+  return [
+    hookValue as T,
+    setLocalStorageValue as SetLocalStorageCallback<T | null>,
+  ];
 }
 
 function deepEqual(v1: JsonValue, v2: JsonValue): boolean {
