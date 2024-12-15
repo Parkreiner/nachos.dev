@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { useEffectEvent } from "./useEffectEvent";
 
 type JsonObject = Readonly<{ [key: string]: JsonValue }>;
@@ -18,7 +18,6 @@ type SetLocalStorageValue<T extends JsonValue = JsonValue> = (
 
 type BaseUseLocalStorageOptions = Readonly<{
   key: string;
-  onError?: (error: Error) => void;
 
   /**
    * A custom localStorage implementation. Mainly relevant for testing.
@@ -55,6 +54,7 @@ type UseLocalStorageOptionsWithFallback<T extends JsonValue = JsonValue> =
 type UseLocalStorageResult<T extends JsonValue = JsonValue> = readonly [
   value: T,
   setStorageValue: SetLocalStorageValue<T>,
+  latestError: Error | undefined,
 ];
 
 export function useLocalStorage<T extends JsonValue = JsonValue>(
@@ -71,13 +71,12 @@ export function useLocalStorage<T extends JsonValue = JsonValue>(
   const {
     key,
     fallbackValue,
-    onError = console.error,
     removeNullValues = true,
     syncFallbackOnMount = false,
     localStorage = window.localStorage,
   } = options;
 
-  const stableOnError = useEffectEvent(onError);
+  const [latestError, setLatestError] = useState<Error>();
 
   // We actually need useCallback and not useEffectEvent here, because of how
   // useSyncExternalStore works. Every time useSync gets a new memory reference
@@ -111,14 +110,14 @@ export function useLocalStorage<T extends JsonValue = JsonValue>(
             notifyReact();
           }
         } catch (err) {
-          stableOnError(err as Error);
+          setLatestError(err as Error);
         }
       };
 
       window.addEventListener("storage", onStorageUpdate);
       return () => window.removeEventListener("storage", onStorageUpdate);
     },
-    [key, localStorage, stableOnError],
+    [key, localStorage],
   );
 
   const readFromLocalStorage = (): T | null => {
@@ -130,22 +129,31 @@ export function useLocalStorage<T extends JsonValue = JsonValue>(
     try {
       const parsed = JSON.parse(payload) as T;
       return parsed;
-    } catch (err) {
-      stableOnError(err as Error);
+    } catch {
+      /**
+       * @todo Figure out if there's a good way to surface these errors to the
+       * rest of the hook. The state getter must be pure, so you can't call
+       * state setters from here. Exposing the error as a value might require
+       * refactoring all the state to live outside React.
+       */
       return null;
     }
   };
 
-  const storageValue = useSyncExternalStore(
+  const storageState = useSyncExternalStore(
     subscribeToLocalStorage,
     readFromLocalStorage,
   );
 
   const hookValue =
-    storageValue === null && fallbackValue !== undefined
+    storageState === null && fallbackValue !== undefined
       ? fallbackValue
-      : storageValue;
+      : storageState;
 
+  // Using useEffectEvent to make the state setter mirror the behavior from
+  // useState's state setter as closely as possible (namely, that the
+  // function maintains a stable reference for the entire duration of the
+  // component)
   const setLocalStorageValue: SetLocalStorageValue<T | null> = useEffectEvent(
     (payload) => {
       let newValue: T | null;
@@ -155,7 +163,7 @@ export function useLocalStorage<T extends JsonValue = JsonValue>(
         try {
           newValue = payload(hookValue);
         } catch (err) {
-          stableOnError(err as Error);
+          setLatestError(err as Error);
           return;
         }
       }
@@ -169,29 +177,32 @@ export function useLocalStorage<T extends JsonValue = JsonValue>(
         const string = JSON.stringify(newValue);
         localStorage.setItem(key, string);
       } catch (err) {
-        stableOnError(err as Error);
+        setLatestError(err as Error);
       }
     },
   );
 
   // It's generally a really bad idea to have an effect that only runs on mount
-  // without resolving the reactivity properly, but there are a lot of
-  // useEffectEvent calls here already, and I don't want to add even more
-  // overhead. Just going to silence the linter instead.
+  // without resolving the reactivity properly, but I didn't want to add the
+  // overhead of useEffectEvent for one-time logic
   useEffect(() => {
     const canSyncOnMount =
       syncFallbackOnMount &&
-      storageValue === null &&
+      storageState === null &&
       fallbackValue !== undefined;
     if (!canSyncOnMount) {
       return;
     }
 
-    const string = JSON.stringify(fallbackValue);
-    localStorage.setItem(key, string);
+    try {
+      const string = JSON.stringify(fallbackValue);
+      localStorage.setItem(key, string);
+    } catch (err) {
+      setLatestError(err as Error);
+    }
   }, []);
 
-  return [hookValue, setLocalStorageValue];
+  return [hookValue, setLocalStorageValue, latestError];
 }
 
 function deepEqual(v1: JsonValue, v2: JsonValue): boolean {
