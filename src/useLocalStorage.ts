@@ -12,7 +12,7 @@ type JsonValue =
 
 type ReactSubscriptionCallback = (notifyReact: () => void) => () => void;
 
-type SetLocalStorageCallback<T extends JsonValue = JsonValue> = (
+type SetLocalStorageValue<T extends JsonValue = JsonValue> = (
   payload: T | null | ((newValue: T | null) => T | null),
 ) => void;
 
@@ -54,7 +54,7 @@ type UseLocalStorageOptionsWithFallback<T extends JsonValue = JsonValue> =
 
 type UseLocalStorageResult<T extends JsonValue = JsonValue> = readonly [
   value: T,
-  setStorageValue: SetLocalStorageCallback<T>,
+  setStorageValue: SetLocalStorageValue<T>,
 ];
 
 export function useLocalStorage<T extends JsonValue = JsonValue>(
@@ -146,18 +146,18 @@ export function useLocalStorage<T extends JsonValue = JsonValue>(
       ? fallbackValue
       : storageValue;
 
-  const setLocalStorageValue: SetLocalStorageCallback<T> = useEffectEvent(
+  const setLocalStorageValue: SetLocalStorageValue<T | null> = useEffectEvent(
     (payload) => {
       let newValue: T | null;
-      if (typeof payload === "function") {
+      if (typeof payload !== "function") {
+        newValue = payload;
+      } else {
         try {
           newValue = payload(hookValue);
         } catch (err) {
           stableOnError(err as Error);
           return;
         }
-      } else {
-        newValue = payload;
       }
 
       if (newValue === null && removeNullValues) {
@@ -191,10 +191,7 @@ export function useLocalStorage<T extends JsonValue = JsonValue>(
     localStorage.setItem(key, string);
   }, []);
 
-  return [
-    hookValue as T,
-    setLocalStorageValue as SetLocalStorageCallback<T | null>,
-  ];
+  return [hookValue, setLocalStorageValue];
 }
 
 function deepEqual(v1: JsonValue, v2: JsonValue): boolean {
