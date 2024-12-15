@@ -1,3 +1,12 @@
+/**
+ * @todo Figure out how to broaden the return type when a fallbackValue is
+ * provided (i.e., if the fallback is false, we want the type to be boolean, and
+ * not literal false). Especially important for object properties
+ *
+ * React useState has this behavior, but at least from their index.d.ts files,
+ * I have no idea how they're achieving it. Not sure if they just have a magic
+ * exception baked in, or what.
+ */
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { useEffectEvent } from "./useEffectEvent";
 
