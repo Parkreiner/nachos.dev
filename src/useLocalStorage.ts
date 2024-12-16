@@ -7,7 +7,13 @@
  * I have no idea how they're achieving it. Not sure if they just have a magic
  * exception baked in, or what.
  */
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useEffectEvent } from "./useEffectEvent";
 
 type JsonObject = Readonly<{ [key: string]: JsonValue }>;
@@ -68,13 +74,15 @@ function deepEqual(v1: JsonValue, v2: JsonValue): boolean {
     return true;
   }
 
-  if (typeof v1 !== "object" || typeof v2 !== "object") {
-    return false;
-  }
-
-  // Writing condition like this to get better type narrowing. The very first
-  // check means that when one is null, the other can't be
-  if (v1 === null || v2 === null) {
+  // The previous check should already take care of all primitives, but we need
+  // to start doing predicates to prove things to the compiler and get it off
+  // our backs
+  if (
+    typeof v1 !== "object" ||
+    typeof v2 !== "object" ||
+    v1 === null ||
+    v2 === null
+  ) {
     return false;
   }
 
@@ -120,6 +128,9 @@ function deepEqual(v1: JsonValue, v2: JsonValue): boolean {
 }
 
 export function createUseLocalStorage(localStorage: Storage) {
+  // Using overloaded signatures, so the return syntax is wonky. Have to define
+  // the function along with all its clamps, and then return it in a separate
+  // statement
   function useLocalStorage<T extends JsonValue = JsonValue>(
     options: UseLocalStorageOptionsWithFallback<T>,
   ): UseLocalStorageResult<T>;
@@ -144,7 +155,7 @@ export function createUseLocalStorage(localStorage: Storage) {
     // useSyncExternalStore works. Every time useSync gets a new memory
     // reference for its subscription callback, it unsubscribes with the old
     // callback and resubscribes with the new one. We want that behavior every
-    // time the storage key changes
+    // time the storage key changes during re-renders
     const subscribeToLocalStorage = useCallback<ReactSubscriptionCallback>(
       (notifyReact) => {
         const onStorageUpdate = (event: StorageEvent) => {
@@ -179,38 +190,34 @@ export function createUseLocalStorage(localStorage: Storage) {
         window.addEventListener("storage", onStorageUpdate);
         return () => window.removeEventListener("storage", onStorageUpdate);
       },
-      [key, localStorage],
+      [key],
     );
 
-    const readFromLocalStorage = (): T | null => {
-      const payload = localStorage.getItem(key);
-      if (payload === null) {
+    const storagePayload = useSyncExternalStore(subscribeToLocalStorage, () =>
+      localStorage.getItem(key),
+    );
+
+    // Can't put this logic in the useSyncExternalStore getter, because it
+    // expects the value that comes back to be the exact same memory reference
+    // each time. We can move the parsed value into a cache that lives outside
+    // React, but in the meantime, we can just sync based on the payload, and
+    // then cache the parsed value on a per-component instance basis
+    const parsedValue = useMemo<T | null>(() => {
+      if (storagePayload === null) {
         return null;
       }
 
       try {
-        const parsed = JSON.parse(payload) as T;
-        return parsed;
+        return JSON.parse(storagePayload) as T;
       } catch {
-        /**
-         * @todo Figure out if there's a good way to surface these errors to the
-         * rest of the hook. The state getter must be pure, so you can't call
-         * state setters from here. Exposing the error as a value might require
-         * refactoring all the state to live outside React.
-         */
         return null;
       }
-    };
+    }, [storagePayload]);
 
-    const storageState = useSyncExternalStore(
-      subscribeToLocalStorage,
-      readFromLocalStorage,
-    );
-
-    const hookValue =
-      storageState === null && fallbackValue !== undefined
+    const exposedValue =
+      parsedValue === null && fallbackValue !== undefined
         ? fallbackValue
-        : storageState;
+        : parsedValue;
 
     // Using useEffectEvent to make the state setter mirror the behavior from
     // useState's state setter as closely as possible (namely, that the
@@ -223,7 +230,7 @@ export function createUseLocalStorage(localStorage: Storage) {
           newValue = payload;
         } else {
           try {
-            newValue = payload(hookValue);
+            newValue = payload(exposedValue);
           } catch (err) {
             setLatestError(err as Error);
             return;
@@ -250,7 +257,7 @@ export function createUseLocalStorage(localStorage: Storage) {
     useEffect(() => {
       const canSyncOnMount =
         syncFallbackOnMount &&
-        storageState === null &&
+        parsedValue === null &&
         fallbackValue !== undefined;
       if (!canSyncOnMount) {
         return;
@@ -264,7 +271,7 @@ export function createUseLocalStorage(localStorage: Storage) {
       }
     }, []);
 
-    return [hookValue, setLocalStorageValue, latestError];
+    return [exposedValue, setLocalStorageValue, latestError];
   }
 
   return useLocalStorage;
